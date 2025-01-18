@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite" // Change to your database provider if not SQLite
+  url      = "file:../db/auth.db" // Update with your database path
+}
+
+model Permission {
+  id              Int               @id @default(autoincrement())
+  name            String            @unique
+  rolePermissions RolePermission[]
+}
+
+model Role {
+  id              Int               @id @default(autoincrement())
+  name            String            @unique
+  users           User[]
+  rolePermissions RolePermission[]
+}
+
+model RolePermission {
+  id                Int             @id @default(autoincrement())
+  roleId            Int
+  permissionId      Int
+  role              Role            @relation(fields: [roleId], references: [id])
+  permission        Permission      @relation(fields: [permissionId], references: [id])
+
+  @@unique([roleId, permissionId]) // Ensure a role cannot have duplicate permissions
+}
+
+model User {
+  id                Int             @id @default(autoincrement())
+  username          String          @unique
+  email             String          @unique
+  password          String
+  roleId            Int             @default(3)
+  role              Role            @relation(fields: [roleId], references: [id])
+  sessions          Session[]
+}
+
+model Session {
+  id                Int             @id @default(autoincrement())
+  sessionId         String          @unique
+  userId            Int
+  data              String
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  expiresAt         DateTime?
+
+  // Foreign key linking to the User model
+  user              User            @relation(fields: [userId], references: [id])
+
+  @@index([sessionId])
+}
